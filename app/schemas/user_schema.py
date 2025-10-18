@@ -8,7 +8,12 @@ class UserBase(BaseModel):
 
 # ---------- USER CREATE ----------
 class UserCreate(UserBase):
-    password: str  # only for registration
+    password: str  # Only for registration
+
+# ---------- USER LOGIN ----------
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
 
 # ---------- USER RESPONSE ----------
 class UserResponse(UserBase):
