@@ -1,19 +1,29 @@
-# app/schemas/sub_schema.py
 from pydantic import BaseModel
-from datetime import date
+from typing import Optional
 
+# ---------- BASE ----------
 class SubscriptionBase(BaseModel):
     name: str
-    description: str | None = None
+    description: Optional[str] = None
     price: float
-    renewal_date: date
+    renewal_date: str
+    category: str
 
+# ---------- CREATE ----------
 class SubscriptionCreate(SubscriptionBase):
-    pass
+    pass  # same as base, but allows future extension
 
+# ---------- UPDATE ----------
+class SubscriptionUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    price: Optional[float] = None
+    renewal_date: Optional[str] = None
+    category: Optional[str] = None
+
+# ---------- RESPONSE ----------
 class SubscriptionResponse(SubscriptionBase):
     id: int
-    category: str
     owner_id: int
 
     class Config:
