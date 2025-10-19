@@ -7,7 +7,8 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     REDIS_URL: str = "redis://localhost:6379/0"
-    OPENAI_API_KEY: str = "demo-API_KEY"
+    OPENAI_API_KEY: str | None = None
+    GROQ_API_KEY: str | None = None
     APP_ENV: str = "development"
 
     class Config:
