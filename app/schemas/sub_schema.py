@@ -1,19 +1,20 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional
+from datetime import date
 
-# ---------- BASE ----------
+
 class SubscriptionBase(BaseModel):
     name: str
     description: Optional[str] = None
     price: float
     renewal_date: str
-    category: str
+    category: Optional[str] = None
 
-# ---------- CREATE ----------
+
 class SubscriptionCreate(SubscriptionBase):
-    pass  # same as base, but allows future extension
+    pass
 
-# ---------- UPDATE ----------
+
 class SubscriptionUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
@@ -21,10 +22,10 @@ class SubscriptionUpdate(BaseModel):
     renewal_date: Optional[str] = None
     category: Optional[str] = None
 
-# ---------- RESPONSE ----------
+
 class SubscriptionResponse(SubscriptionBase):
     id: int
     owner_id: int
 
-    class Config:
-        orm_mode = True
+    # ✅ The only correct way in Pydantic v2
+    model_config = ConfigDict(from_attributes=True)

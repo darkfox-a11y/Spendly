@@ -15,7 +15,8 @@ from app.services.budget_service import (
     get_budget_summary
 )
 from app.services.auth_service import get_current_user
-from app.main import limiter
+from app.core.rate_limiter import limiter  # Use this instead
+from app.db.models import User
 
 router = APIRouter(prefix="/budget", tags=["Budget"])
 
@@ -26,7 +27,7 @@ def add_budget(
     request: Request,
     budget_data: BudgetCreate,
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     return create_budget(db, current_user, budget_data)
 
@@ -47,7 +48,7 @@ def modify_budget(
     request: Request,
     budget_data: BudgetUpdate,
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     return update_budget(db, current_user.id, budget_data)
 
@@ -57,7 +58,7 @@ def modify_budget(
 def remove_budget(
     request: Request,
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     return delete_budget(db, current_user.id)
 
@@ -67,6 +68,6 @@ def remove_budget(
 def budget_summary(
     request: Request,
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     return get_budget_summary(db, current_user.id)

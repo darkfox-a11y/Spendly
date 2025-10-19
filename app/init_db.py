@@ -1,15 +1,11 @@
-from app.db.database import Base, engine
-from sqlalchemy import inspect
+# create_tables.py
+from app.db.database import engine, Base
+from app.db.models import User, Subscription, Budget
 
-# Drop all existing tables safely
-inspector = inspect(engine)
-existing_tables = inspector.get_table_names()
+print("Dropping all tables...")
+Base.metadata.drop_all(bind=engine)
 
-if existing_tables:
-    print(f"Dropping tables: {existing_tables}")
-    Base.metadata.drop_all(bind=engine)
-    print("Tables dropped successfully.")
-
-# Recreate all tables from current models
+print("Creating all tables...")
 Base.metadata.create_all(bind=engine)
-print("✅ Database schema recreated successfully.")
+
+print("✅ Database tables created successfully!")

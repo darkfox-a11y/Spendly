@@ -13,7 +13,6 @@ class BudgetCreate(BudgetBase):
 # ---------- UPDATE ----------
 class BudgetUpdate(BaseModel):
     monthly_limit: Optional[Decimal] = None
-    current_spent: Optional[Decimal] = None
 
 # ---------- RESPONSE ----------
 class BudgetResponse(BudgetBase):
@@ -21,7 +20,7 @@ class BudgetResponse(BudgetBase):
     current_spent: Decimal
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # ---------- SUMMARY ----------
 class BudgetSummary(BaseModel):

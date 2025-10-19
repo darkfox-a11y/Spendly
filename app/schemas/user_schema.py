@@ -1,5 +1,5 @@
 # app/schemas/user_schema.py
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, ConfigDict
 
 # ---------- USER BASE ----------
 class UserBase(BaseModel):
@@ -19,5 +19,4 @@ class UserLogin(BaseModel):
 class UserResponse(UserBase):
     id: int
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)

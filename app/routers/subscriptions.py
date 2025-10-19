@@ -12,20 +12,21 @@ from app.services.subscription_service import (
     get_subscription_by_name
 )
 from app.services.auth_service import get_current_user
-from app.main import limiter
+from app.core.rate_limiter import limiter
+from app.db.models import User
+
 
 router = APIRouter(prefix="/subscriptions", tags=["Subscriptions"])
 
 # ---------- CREATE ----------
-@router.post("/", response_model=SubscriptionResponse, status_code=status.HTTP_201_CREATED)
-@limiter.limit("5/minute")
-def add_subscription(
-    request: Request,
+@router.post("/", response_model=None, status_code=status.HTTP_201_CREATED)
+def create_subscription_route(
     sub_data: SubscriptionCreate,
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
-    return create_subscription(db, current_user, sub_data)
+    new_sub = create_subscription(db=db, user=current_user, sub_data=sub_data)
+    return new_sub
 
 # ---------- READ ALL ----------
 @router.get("/", response_model=List[SubscriptionResponse])
@@ -33,9 +34,25 @@ def add_subscription(
 def list_subscriptions(
     request: Request,
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)  # ✅ Added type annotation
 ):
     return get_subscriptions(db, current_user.id)
+
+
+# ---------- SEARCH BY NAME ----------
+@router.get("/search/", response_model=List[SubscriptionResponse])
+@limiter.limit("10/minute")
+def search_subscriptions(
+    request: Request,
+    name: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)  # ✅ Added type annotation
+):
+    """
+    Search subscriptions by name (case-insensitive, partial match).
+    Example: /subscriptions/search/?name=netflix
+    """
+    return get_subscription_by_name(db, name, current_user.id)
 
 # ---------- READ SINGLE ----------
 @router.get("/{sub_id}", response_model=SubscriptionResponse)
@@ -44,7 +61,7 @@ def read_subscription(
     request: Request,
     sub_id: int,
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)  # ✅ Added type annotation
 ):
     return get_subscription_by_id(db, sub_id, current_user.id)
 
@@ -56,7 +73,7 @@ def modify_subscription(
     sub_id: int,
     sub_data: SubscriptionUpdate,
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)  # ✅ Added type annotation
 ):
     return update_subscription(db, sub_id, current_user.id, sub_data)
 
@@ -67,21 +84,7 @@ def remove_subscription(
     request: Request,
     sub_id: int,
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)  # ✅ Added type annotation
 ):
     return delete_subscription(db, sub_id, current_user.id)
 
-# ---------- SEARCH BY NAME ----------
-@router.get("/search/", response_model=List[SubscriptionResponse])
-@limiter.limit("10/minute")
-def search_subscriptions(
-    request: Request,
-    name: str,
-    db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
-):
-    """
-    Search subscriptions by name (case-insensitive, partial match).
-    Example: /subscriptions/search/?name=netflix
-    """
-    return get_subscription_by_name(db, name, current_user.id)

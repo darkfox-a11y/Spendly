@@ -4,12 +4,14 @@ from app.db.models import Subscription, User
 from decimal import Decimal
 
 
+
 def create_subscription(db: Session, user: User, sub_data):
     """
     Create a new subscription for the authenticated user.
     Updates user's budget current_spent if a budget exists.
     """
-    # ✅ Ensure the user still exists
+
+    # ✅ Ensure the user exists in DB
     user_in_db = db.query(User).filter(User.id == user.id).first()
     if not user_in_db:
         raise HTTPException(
@@ -17,27 +19,39 @@ def create_subscription(db: Session, user: User, sub_data):
             detail="User not found."
         )
 
-    # ✅ Check if user has a budget before adding subscription
+    # ✅ Require existing budget before adding subscription
     if not user_in_db.budget:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="You must create a budget before adding subscriptions."
         )
 
-    # ✅ Normalize and create subscription
+    # ✅ Normalize and validate input
     data = sub_data.model_dump()
-    data["price"] = Decimal(str(data["price"]))  # ensure Decimal precision
 
+    try:
+        data["price"] = Decimal(str(data["price"]))  # precision-safe conversion
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Invalid price format."
+        )
+
+    # ✅ Create subscription linked to user
     new_sub = Subscription(**data, owner=user_in_db)
     db.add(new_sub)
     db.commit()
     db.refresh(new_sub)
 
-    # ✅ Update budget spending
-    user_in_db.budget.current_spent += new_sub.price
+    # ✅ Update current_spent safely (Decimal arithmetic)
+    user_in_db.budget.current_spent = (
+        user_in_db.budget.current_spent or Decimal("0.00")
+    ) + new_sub.price
+
     db.commit()
     db.refresh(user_in_db.budget)
 
+    # ✅ Return ORM object (will serialize via from_attributes=True)
     return new_sub
 
 
