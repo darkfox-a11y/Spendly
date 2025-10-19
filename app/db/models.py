@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String, ForeignKey,Numeric
 from sqlalchemy.orm import relationship
 from app.db.database import Base
 
@@ -21,7 +21,7 @@ class Subscription(Base):
     id = Column(Integer, primary_key = True, index = True)
     name = Column(String, index = True, nullable = False)
     description = Column(String, nullable = True)
-    price = Column(Integer, nullable = False)
+    price = Column(Numeric(10,2), nullable = False)
     renewal_date = Column(String, nullable = False)
     category = Column(String, nullable = False)
 
@@ -31,9 +31,10 @@ class Subscription(Base):
 class Budget(Base):
     __tablename__ = "budgets"
 
-    id = Column(Integer, primary_key = True, index = True)
-    monthly_limit = Column(Integer, nullable = False)
-    current_spent = Column(Integer, default = 0.0)
+    id = Column(Integer, primary_key=True, index=True)
+    monthly_limit = Column(Numeric(10, 2), nullable=False)
+    current_spent = Column(Numeric(10, 2), default=0.00)
+    user_id = Column(Integer, ForeignKey("users.id"), unique=True)
 
     user = relationship("User", back_populates="budget")
 

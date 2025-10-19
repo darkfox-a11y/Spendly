@@ -25,7 +25,7 @@ def add_subscription(
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
-    return create_subscription(db, current_user.id, sub_data)
+    return create_subscription(db, current_user, sub_data)
 
 # ---------- READ ALL ----------
 @router.get("/", response_model=List[SubscriptionResponse])
@@ -85,4 +85,3 @@ def search_subscriptions(
     Example: /subscriptions/search/?name=netflix
     """
     return get_subscription_by_name(db, name, current_user.id)
-
