@@ -86,5 +86,5 @@ def remove_subscription(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)  # ✅ Added type annotation
 ):
-    return delete_subscription(db, sub_id, current_user.id)
+    return delete_subscription(db, sub_id, current_user)
 

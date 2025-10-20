@@ -1,6 +1,8 @@
-from sqlalchemy import Column, Integer, String, ForeignKey,Numeric
+from sqlalchemy import Column, Integer, String, ForeignKey,Numeric,Boolean,Date
 from sqlalchemy.orm import relationship
 from app.db.database import Base
+from datetime import datetime,date
+
 
 class User(Base):
     __tablename__ = "users"
@@ -22,7 +24,7 @@ class Subscription(Base):
     name = Column(String, index = True, nullable = False)
     description = Column(String, nullable = True)
     price = Column(Numeric(10,2), nullable = False)
-    renewal_date = Column(String, nullable = False)
+    renewal_date = Column(Date, nullable = False)
     category = Column(String, nullable = False)
 
     owner_id = Column(Integer, ForeignKey("users.id"))#foreig key to connect to user table
@@ -34,7 +36,9 @@ class Budget(Base):
     id = Column(Integer, primary_key=True, index=True)
     monthly_limit = Column(Numeric(10, 2), nullable=False)
     current_spent = Column(Numeric(10, 2), default=0.00)
-    user_id = Column(Integer, ForeignKey("users.id"), unique=True)
+    allow_over_limit = Column(Boolean, default=False)
 
+
+    user_id = Column(Integer, ForeignKey("users.id"), unique=True)
     user = relationship("User", back_populates="budget")
 

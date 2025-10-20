@@ -16,7 +16,9 @@ from app.services.budget_service import (
 )
 from app.services.auth_service import get_current_user
 from app.core.rate_limiter import limiter  # Use this instead
-from app.db.models import User
+from app.db.models import User, Budget
+from fastapi import HTTPException
+
 
 router = APIRouter(prefix="/budget", tags=["Budget"])
 
@@ -63,7 +65,7 @@ def remove_budget(
     return delete_budget(db, current_user.id)
 
 # ---------- SUMMARY ----------
-@router.get("/summary", response_model=BudgetSummary)
+@router.get("/summary", response_model=None)
 @limiter.limit("10/minute")
 def budget_summary(
     request: Request,
@@ -71,3 +73,16 @@ def budget_summary(
     current_user: User = Depends(get_current_user)
 ):
     return get_budget_summary(db, current_user.id)
+
+#------------TOGGLE ALLOW OVER LIMIT -----------
+@router.patch("/toggle-overlimit")
+def toggle_over_limit(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    budget = db.query(Budget).filter(Budget.user_id == current_user.id).first()
+    if not budget:
+        raise HTTPException(status_code=404, detail="Budget not found")
+    
+    budget.allow_over_limit = not budget.allow_over_limit
+    db.commit()
+    db.refresh(budget)
+    return {"allow_over_limit": budget.allow_over_limit}
+

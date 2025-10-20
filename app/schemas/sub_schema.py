@@ -1,5 +1,6 @@
 from pydantic import BaseModel, ConfigDict
 from typing import Optional
+from sqlalchemy import Date
 from datetime import date
 
 
@@ -7,7 +8,7 @@ class SubscriptionBase(BaseModel):
     name: str
     description: Optional[str] = None
     price: float
-    renewal_date: str
+    renewal_date: date
     category: Optional[str] = None
 
 
@@ -19,7 +20,7 @@ class SubscriptionUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
     price: Optional[float] = None
-    renewal_date: Optional[str] = None
+    renewal_date: Optional[date] = None
     category: Optional[str] = None
 
 

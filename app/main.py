@@ -6,7 +6,7 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
 # Routers
-from app.routers import auth, budget, subscriptions
+from app.routers import auth, budget, subscriptions,ai
 
 # Rate limiter
 from app.core.rate_limiter import limiter
@@ -49,6 +49,8 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(subscriptions.router)
 app.include_router(budget.router)
+app.include_router(ai.router)
+
 
 # -----------------------------
 # Root Endpoint

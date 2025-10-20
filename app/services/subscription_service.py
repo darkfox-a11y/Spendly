@@ -2,6 +2,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 from app.db.models import Subscription, User
 from decimal import Decimal
+from app.services import categorizer
 
 
 
@@ -36,6 +37,25 @@ def create_subscription(db: Session, user: User, sub_data):
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="Invalid price format."
         )
+    
+
+    projected_spent = (
+        user_in_db.budget.current_spent or Decimal("0.00")
+    ) + data["price"]
+    
+    # Enforce budget limit unless over-limit is allowed
+    if projected_spent > user.budget.monthly_limit and not user_in_db.budget.allow_over_limit:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+             detail=f"Cannot add subscription — exceeds monthly budget limit of ₹{user_in_db.budget.monthly_limit}. "
+                   f"Your projected spend would be ₹{projected_spent}."
+        )
+    
+    # ✅ Categorize subscription if category not provided
+    if not sub_data.category or sub_data.category.lower() == "other":
+        category = categorizer(sub_data.name, sub_data.description)
+    else:
+        category = sub_data.category
 
     # ✅ Create subscription linked to user
     new_sub = Subscription(**data, owner=user_in_db)
@@ -94,13 +114,13 @@ def update_subscription(db: Session, sub_id: int, user_id: int, sub_data):
     return sub
 
 
-def delete_subscription(db: Session, sub_id: int, user_id: int):
+def delete_subscription(db: Session, sub_id: int, user: User):
     """
-    Delete a subscription for a user and adjust budget spending if a budget exists.
+    Delete a subscription and update user's budget current_spent accordingly.
     """
     sub = db.query(Subscription).filter(
         Subscription.id == sub_id,
-        Subscription.owner_id == user_id
+        Subscription.owner_id == user.id
     ).first()
 
     if not sub:
@@ -109,33 +129,23 @@ def delete_subscription(db: Session, sub_id: int, user_id: int):
             detail="Subscription not found."
         )
 
-    # ✅ Ensure user still exists
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found."
-        )
-
-    # ✅ Ensure user has a budget before adjusting spending
-    if not user.budget:
+    user_in_db = db.query(User).filter(User.id == user.id).first()
+    if not user_in_db or not user_in_db.budget:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Cannot modify spending — no budget found for this user."
+            detail="User or budget not found."
         )
 
-    # ✅ Deduct spending safely (never negative)
-    new_value = user.budget.current_spent - sub.price
-    if new_value < 0:
-        new_value = Decimal("0.00")
+    # ✅ Subtract this subscription's price from current_spent
+    current_spent = user_in_db.budget.current_spent or Decimal("0.00")
+    user_in_db.budget.current_spent = max(
+        Decimal("0.00"),
+        current_spent - sub.price
+    )
 
-    user.budget.current_spent = new_value
-    db.commit()
-    db.refresh(user.budget)
-
-    # ✅ Delete the subscription
     db.delete(sub)
     db.commit()
+    db.refresh(user_in_db.budget)
 
     return {"message": "Subscription deleted successfully"}
 

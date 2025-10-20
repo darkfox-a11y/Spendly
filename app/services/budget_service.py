@@ -1,7 +1,7 @@
 # app/services/budget_service.py
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
-from app.db.models import Budget, User
+from app.db.models import Budget, User,Subscription
 from app.schemas.budget_schema import BudgetCreate, BudgetUpdate
 from decimal import Decimal
 
@@ -63,20 +63,49 @@ def update_budget(db: Session, user_id: int, budget_data: BudgetUpdate):
 
 
 def delete_budget(db: Session, user_id: int):
-    budget = db.query(Budget).filter(Budget.user_id == user_id).first()
-    if not budget:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Budget not found")
+    user = db.query(User).filter(User.id == user_id).first()
 
-    db.delete(budget)
+    if not user or not user.budget:
+        raise HTTPException(status_code=404, detail="Budget not found")
+
+    # ✅ Delete all subscriptions for this user first
+    db.query(Subscription).filter(Subscription.owner_id == user_id).delete()
+
+    # ✅ Then delete the budget itself
+    db.delete(user.budget)
     db.commit()
-    return {"message": "Budget deleted successfully"}
+
+    return {"message": "Budget and all related subscriptions deleted successfully"}
+
 
 
 def get_budget_summary(db: Session, user_id: int):
     budget = get_budget(db, user_id)
-    remaining = budget.monthly_limit - budget.current_spent
+
+    if not budget:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Budget not found for this user."
+        )
+    
+    monthly_limit = Decimal(budget.monthly_limit or 0)
+    current_spent = Decimal(budget.current_spent or 0)
+    remaining = monthly_limit - current_spent   
+    limit_exceeded = current_spent > monthly_limit
+
     return {
-        "monthly_limit": budget.monthly_limit,
-        "current_spent": budget.current_spent,
-        "remaining": remaining
+        "monthly_limit": monthly_limit,
+        "current_spent": current_spent,
+        "remaining": max(remaining, Decimal("0.00")),
+        "limit_exceeded": limit_exceeded,
+        "allow_over_limit": budget.allow_over_limit,
+        "status": ("Over Limit" if limit_exceeded else "Within Limit"),
+        "insight": (
+            "You have exceeded your monthly budget. Consider reviewing subscriptions."
+            if limit_exceeded and not budget.allow_over_limit else
+            "You are over your limit but overspending is allowed."
+            if limit_exceeded and budget.allow_over_limit else
+            "You are spending within your set budget. Keep it up!"
+        )
+
     }
