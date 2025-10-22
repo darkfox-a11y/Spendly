@@ -2,8 +2,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 from app.db.models import Subscription, User
 from decimal import Decimal
-from app.services import categorizer
-
+from app.services.ai_categorizer import predict_category
 
 
 def create_subscription(db: Session, user: User, sub_data):
@@ -52,10 +51,9 @@ def create_subscription(db: Session, user: User, sub_data):
         )
     
     # ✅ Categorize subscription if category not provided
-    if not sub_data.category or sub_data.category.lower() == "other":
-        category = categorizer(sub_data.name, sub_data.description)
-    else:
-        category = sub_data.category
+    if not data.get("category") or data.get("category", "").lower() == "other":
+        # Call categorizer and update the data dictionary
+        data["category"] = predict_category(data.get("name"), data.get("description"))
 
     # ✅ Create subscription linked to user
     new_sub = Subscription(**data, owner=user_in_db)

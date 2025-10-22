@@ -1,59 +1,52 @@
-from openai import OpenAI
+# app/services/ai_categorizer.py
+from groq import Groq
 from app.core.config import settings
-import requests
+
+# ✅ Preferred models (top one tried first)
+PREFERRED_MODELS = [
+    "llama-3.3-70b-versatile",
+    "llama-3.1-8b-instant",
+    "gemma2-9b-it",
+]
+
+def _pick_available_model(client: Groq) -> str:
+    """Check which preferred model exists in your Groq account."""
+    try:
+        available = {m.id for m in client.models.list().data}
+        for m in PREFERRED_MODELS:
+            if m in available:
+                print(f"✅ Using Groq model: {m}")
+                return m
+    except Exception as e:
+        print(f"⚠️ Could not fetch models list: {e}")
+    print(f"⚙️ Defaulting to first preferred model: {PREFERRED_MODELS[0]}")
+    return PREFERRED_MODELS[0]
 
 def predict_category(name: str, description: str | None = None) -> str:
-    """
-    Predicts a category for a subscription using the free Groq API (Mixtral-8x7B).
-    Falls back to rule-based classification if API fails.
-    """
-    name_lower = name.lower()
+    client = Groq(api_key=settings.GROQ_API_KEY)
+    model = _pick_available_model(client)
 
-    # 🔹 Rule-based local fallback first
-    if any(k in name_lower for k in ["netflix", "spotify", "youtube", "prime"]):
-        return "Entertainment"
-    if any(k in name_lower for k in ["adobe", "microsoft", "notion", "canva", "slack"]):
-        return "Productivity"
-    if any(k in name_lower for k in ["chatgpt", "openai", "bard", "claude", "copilot"]):
-        return "AI Tools"
-    if any(k in name_lower for k in ["aws", "azure", "gcp", "cloud"]):
-        return "Cloud Services"
-    if any(k in name_lower for k in ["udemy", "coursera", "skillshare", "khan"]):
-        return "Education"
-    if any(k in name_lower for k in ["groww", "zerodha", "stripe", "razorpay"]):
-        return "Finance"
-
-    # 🔹 Try Groq API (same syntax as OpenAI)
-    if not settings.GROQ_API_KEY:
-        return "Other"
+    prompt = f"""
+    You are a precise service categorizer.
+    Given the name and description of a product, subscription, or company,
+    describe what type of service it provides in 2–4 words 
+    (e.g., "Credit Card Provider", "Streaming Platform", "Payment Gateway").
+    Name: {name}
+    Description: {description or 'N/A'}
+    Respond with only the service type.
+    """
 
     try:
-        client = OpenAI(
-            base_url="https://api.groq.com/openai/v1",
-            api_key=settings.GROQ_API_KEY
-        )
-
-        prompt = f"""
-        Classify this subscription into one of:
-        Entertainment, Productivity, AI Tools, Education, Finance, Cloud Services, Other.
-        Name: {name}
-        Description: {description or 'N/A'}
-        Respond with only the category name.
-        """
-
-        response = client.chat.completions.create(
-            model="mixtral-8x7b",
+        resp = client.chat.completions.create(
+            model=model,
             messages=[
-                {"role": "system", "content": "You are a precise subscription categorizer."},
-                {"role": "user", "content": prompt}
+                {"role": "system", "content": "You are an expert at identifying services."},
+                {"role": "user", "content": prompt},
             ],
             temperature=0.2,
-            max_tokens=10,
+            max_tokens=12,
         )
-
-        category = response.choices[0].message.content.strip()
-        return category or "Other"
-
+        return (resp.choices[0].message.content or "").strip() or "Other"
     except Exception as e:
-        print(f"[Groq Fallback Error]: {e}")
+        print(f"[Groq fallback error] {e}")
         return "Other"
