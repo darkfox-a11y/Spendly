@@ -1,0 +1,38 @@
+# render.yaml
+services:
+  - type: web
+    name: spendly-backend
+    env: docker
+    plan: free
+    region: oregon
+    envVars:
+      - key: POSTGRES_USER
+        fromDatabase: spendly-db
+        name: user
+      - key: POSTGRES_PASSWORD
+        fromDatabase: spendly-db
+        name: password
+      - key: POSTGRES_DB
+        fromDatabase: spendly-db
+        name: database
+      - key: POSTGRES_HOST
+        fromDatabase: spendly-db
+        name: host
+      - key: POSTGRES_PORT
+        fromDatabase: spendly-db
+        name: port
+      - key: JWT_SECRET_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: SMTP_EMAIL
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: APP_ENV
+        sync: false
+
+databases:
+  - name: spendly-db
+    plan: free
+    region: oregon
