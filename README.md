@@ -76,44 +76,6 @@ Copy code
 
 ---
 
-## 🔐 Environment Variables (`.env`)
-
-```bash
-# Core
-PROJECT_NAME=Spendly Backend
-APP_ENV=development
-
-# Database
-DATABASE_URL=postgresql://fastapi_user:fastapi_pass@spendly_db:5432/subscription_db
-
-# JWT Auth
-JWT_SECRET_KEY=supersecretkey
-JWT_ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=60
-
-# Redis (optional for caching)
-REDIS_URL=redis://localhost:6379/0
-
-# Email (for reminders)
-SMTP_SERVER=smtp.gmail.com
-SMTP_PORT=587
-SMTP_EMAIL=your_spendly_email@gmail.com
-SMTP_PASSWORD=your_app_password
-
-# AI Integration
-GROQ_API_KEY=your_groq_api_key
-🐳 Docker Setup
-Build and Run the Application
-bash
-Copy code
-docker-compose down --remove-orphans
-docker-compose build
-docker-compose up
-Access the App
-FastAPI Docs: http://localhost:8000/docs
-
-Postgres: runs on localhost:5432
-
 🧩 Key API Endpoints
 Method	Endpoint	Description
 POST	/auth/register	Register a new user
