@@ -8,7 +8,7 @@ from app.db.database import SessionLocal
 from app.db.models import User
 from datetime import datetime
 import traceback
-import asyncio # Import asyncio
+import asyncio 
 
 # Keep the detailed check_due_subscriptions function for now
 def check_due_subscriptions():
@@ -56,8 +56,8 @@ def start_scheduler():
     global scheduler
     # Add the job (make sure it's not added multiple times if reloader runs this)
     if not scheduler.get_job("due_sub_checker"):
-        scheduler.add_job(check_due_subscriptions, "interval", minutes=1, id="due_sub_checker")
-        print("➕ Job added to scheduler.")
+        scheduler.add_job(check_due_subscriptions, "cron",hour=9, minute=0, id="due_sub_checker")
+        print(" Job added to scheduler.")
     else:
          print("Job already exists in scheduler.")
 

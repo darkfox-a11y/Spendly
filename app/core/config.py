@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     
     # 2. SET THE CORRECT HOSTNAME FOR DOCKER
     # This must match your docker-compose.yml service name
-    POSTGRES_HOST: str = "spendly_db" 
+    POSTGRES_HOST: str = "spendly_db"
     POSTGRES_PORT: int = 5432
     
     # This is the correct Pydantic V2 syntax
