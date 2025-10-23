@@ -5,6 +5,9 @@
 
 ---
 
+#Available at 
+link:https://spendly-1-b1bk.onrender.com/docs
+
 ## 🧠 Overview
 
 **Spendly** is a full-stack **FastAPI-based** backend service that helps users:
